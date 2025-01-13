@@ -1,6 +1,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Foundation;
 using ObjCRuntime;
 using UIKit;
@@ -39,7 +40,11 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			if (index.Section > -1 && index.Item > -1)
 			{
-				CollectionView.SelectItem(index, true, UICollectionViewScrollPosition.None);
+                // Ensure the selected index is updated after the collection view's items generation is completed
+				CollectionView.PerformBatchUpdates(null, _ =>
+				{
+					CollectionView.SelectItem(index, true, UICollectionViewScrollPosition.None);
+				});
 			}
 		}
 
@@ -48,9 +53,15 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		{
 			var selectedItemIndexes = CollectionView.GetIndexPathsForSelectedItems();
 
-			foreach (var index in selectedItemIndexes)
+			if(selectedItemIndexes is not null && selectedItemIndexes.Any())
 			{
-				CollectionView.DeselectItem(index, true);
+				CollectionView.PerformBatchUpdates(null, _ =>
+				{
+					foreach (var index in selectedItemIndexes)
+					{
+						CollectionView.DeselectItem(index, true);
+					}
+				});
 			}
 		}
 
@@ -145,15 +156,22 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 		void SynchronizePlatformSelectionWithSelectedItems()
 		{
-			var selectedItems = ItemsView.SelectedItems;
+			var selectedItems = ItemsView.SelectedItems.ToHashSet();
 			var selectedIndexPaths = CollectionView.GetIndexPathsForSelectedItems();
 
 			foreach (var path in selectedIndexPaths)
 			{
 				var itemAtPath = GetItemAtIndex(path);
-				if (ShouldNotBeSelected(itemAtPath, selectedItems))
+				if (!selectedItems.Contains(itemAtPath))
+				{
+					CollectionView.PerformBatchUpdates(null, _ =>
 				{
 					CollectionView.DeselectItem(path, true);
+					});
+				}
+				else
+				{
+					selectedItems.Remove(itemAtPath);
 				}
 			}
 
@@ -161,19 +179,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			{
 				SelectItem(item);
 			}
-		}
-
-		bool ShouldNotBeSelected(object item, IList<object> selectedItems)
-		{
-			for (int n = 0; n < selectedItems.Count; n++)
-			{
-				if (selectedItems[n] == item)
-				{
-					return false;
-				}
-			}
-
-			return true;
 		}
 	}
 }

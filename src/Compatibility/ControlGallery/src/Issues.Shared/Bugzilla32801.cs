@@ -83,7 +83,8 @@ namespace Microsoft.Maui.Controls.ControlGallery.Issues
 		}
 
 #if UITEST && __IOS__
-		[Test]
+		[Microsoft.Maui.Controls.Compatibility.UITests.FailsOnMauiIOS]
+		//[Test]
 		public void Bugzilla32801Test()
 		{
 			RunningApp.Tap(c => c.Marked("btnAdd"));

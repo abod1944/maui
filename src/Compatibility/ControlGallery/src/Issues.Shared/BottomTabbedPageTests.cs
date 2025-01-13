@@ -22,7 +22,6 @@ namespace Microsoft.Maui.Controls.ControlGallery.Issues
 
 	[Preserve(AllMembers = true)]
 	[Issue(IssueTracker.Github, 1675, "Bottom Tabbed Page Basic Test", PlatformAffected.All)]
-	[Issue(IssueTracker.None, 0, "TabbedPage with list", PlatformAffected.All)]
 #if UITEST
 	[Category(Compatibility.UITests.UITestCategories.ManualReview)]
 #endif
@@ -255,7 +254,6 @@ namespace Microsoft.Maui.Controls.ControlGallery.Issues
 		}
 
 #if UITEST && __ANDROID__
-[Microsoft.Maui.Controls.Compatibility.UITests.FailsOnMauiAndroid]
 		[Test]
 		public async Task AddAndRemovePages()
 		{

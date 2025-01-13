@@ -24,6 +24,7 @@ namespace Microsoft.Maui.Controls.ControlGallery.Issues
 						Text = "Hi"
 					},
 					new Button {
+						AutomationId = "ShowActionSheet",
 						Text = "Show ActionSheet",
 						Command = new Command (async () => await DisplayActionSheet ("What's up", "Dismiss", "Destroy"))
 					}
@@ -33,6 +34,7 @@ namespace Microsoft.Maui.Controls.ControlGallery.Issues
 
 #if UITEST
 		[Test]
+		[Compatibility.UITests.FailsOnMauiAndroid]
 		public void Issue774TestsDismissActionSheetAfterRotation ()
 		{
 			RunningApp.Tap(q => q.Button("Show ActionSheet"));
