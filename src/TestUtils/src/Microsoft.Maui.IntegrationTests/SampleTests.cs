@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Maui.IntegrationTests
 {
+	[Category(Categories.Samples)]
 	public class SampleTests : BaseBuildTest
 	{
 		public static IEnumerable SampleTestMatrix
@@ -11,7 +12,7 @@ namespace Microsoft.Maui.IntegrationTests
 			get
 			{
 				// Parse individual project files from `Microsoft.Maui.Samples.slnf` to generate a set of test cases
-				var sampleSln = Path.Combine(TestEnvironment.GetMauiDirectory(), "Microsoft.Maui.Samples.slnf");
+				var sampleSln = Path.Combine(TestEnvironment.GetMauiDirectory(), "eng", "Microsoft.Maui.Samples.slnf");
 				var slnFile = JsonConvert.DeserializeObject<SolutionFile>(File.ReadAllText(sampleSln));
 				foreach (var projectFile in slnFile?.solution.projects ?? new List<string> { sampleSln })
 				{
@@ -28,11 +29,13 @@ namespace Microsoft.Maui.IntegrationTests
 		public void Build(string relativeProj, string config)
 		{
 			var projectFile = Path.GetFullPath(Path.Combine(TestEnvironment.GetMauiDirectory(), relativeProj));
-			var binlog = Path.Combine(TestDirectory, Path.Combine("sample.binlog"));
+			var binlog = Path.Combine(LogDirectory, Path.Combine("sample.binlog"));
 			var sampleProps = new[]
 			{
 				"UseWorkload=true",
 				$"RestoreConfigFile={TestNuGetConfig}",
+				// Surface warnings as build errors
+				"TreatWarningsAsErrors=true",
 			};
 
 			Assert.IsTrue(DotnetInternal.Build(projectFile, config, properties: sampleProps, binlogPath: binlog),
