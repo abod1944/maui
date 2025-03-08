@@ -150,7 +150,9 @@ namespace Microsoft.Maui.Controls.Platform
 			var context = Control.Context;
 			var listener = new InnerScaleListener(new PinchGestureHandler(() => View), context.FromPixels);
 			var detector = new ScaleGestureDetector(context, listener, Control.Handler);
+#pragma warning disable CS0618 // Type or member is obsolete
 			ScaleGestureDetectorCompat.SetQuickScaleEnabled(detector, true);
+#pragma warning restore CS0618 // Type or member is obsolete
 
 			return detector;
 		}
@@ -180,11 +182,37 @@ namespace Microsoft.Maui.Controls.Platform
 			if (platformView == null)
 				return;
 
-			if (View.GestureController.CompositeGestureRecognizers.Count == 0)
+			bool shouldAddTouchEvent = false;
+
+			// This change is probably not 100 percent correct.
+			// The main purpose right now is to maintain the behavior of this code
+			// prior to this change
+			// https://github.com/dotnet/maui/commit/2c301d7988a06c3b41c2992bbee557aca04c9388#diff-2d78f02242798d0f2863f679e4dfdee230944be37db5e1a1446bfa4c6c43a5c6R183
+			// If the only CompositeGestureRecognizers is a PointerGestureRecognizer
+			//
+			// Most likely we should just not subscribe to Touch at all if the only gesture is a PGR
+			// But that will be re-evaluated for preview6
+			if (View.GestureRecognizers.Count == 0)
 			{
-				platformView.Touch -= OnPlatformViewTouched;
+				var recognizers = View.GestureController.CompositeGestureRecognizers;
+				foreach (var recognizer in recognizers)
+				{
+					if (recognizer is not PointerGestureRecognizer)
+					{
+						shouldAddTouchEvent = true;
+						break;
+					}
+				}
 			}
 			else
+			{
+				shouldAddTouchEvent = true;
+			}
+
+			// Always unsubscribe first to avoid duplicates
+			platformView.Touch -= OnPlatformViewTouched;
+
+			if (shouldAddTouchEvent)
 			{
 				platformView.Touch += OnPlatformViewTouched;
 			}
