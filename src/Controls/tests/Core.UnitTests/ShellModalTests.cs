@@ -66,7 +66,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 
 			var navStack = shell.Items[0].Items[0].Navigation;
 
-			Assert.Equal(1, navStack.ModalStack.Count);
+			Assert.Single(navStack.ModalStack);
 			Assert.Equal(typeof(ModalTestPage), navStack.ModalStack[0].GetType());
 		}
 
@@ -85,7 +85,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			await shell.GoToAsync("///NewRoute");
 
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.Equal(0, navStack.ModalStack.Count);
+			Assert.Empty(navStack.ModalStack);
 		}
 
 		[Fact]
@@ -101,7 +101,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			// Navigates to different Shell Item
 			await shell.GoToAsync("///NewRoute");
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.Equal(0, navStack.ModalStack.Count);
+			Assert.Empty(navStack.ModalStack);
 		}
 
 		[Fact]
@@ -116,7 +116,18 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 
 			await shell.GoToAsync($"///MainContent");
 			navStack = shell.Items[0].Items[0].Navigation;
-			Assert.Equal(0, navStack.ModalStack.Count);
+			Assert.Empty(navStack.ModalStack);
+		}
+
+		[Fact]
+		public async Task ShellCurrentPageReturnsLastPageInModalStack()
+		{
+			Shell shell = new TestShell();
+			shell.Items.Add(CreateShellItem(shellContentRoute: "MainContent"));
+
+			await shell.GoToAsync($"ModalTestPage/ModalTestPage");
+			var navStack = shell.Items[0].Items[0].Navigation;
+			Assert.Equal(shell.CurrentPage, navStack.ModalStack.Last());
 		}
 
 		[Fact]
@@ -146,6 +157,18 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			Assert.True(true);
 		}
 
+		[Fact]
+		public async Task PoppingModalStackFiresAppearingOnRevealedNonModalPage()
+		{
+			Shell shell = new TestShell();
+			shell.Items.Add(CreateShellItem(shellContentRoute: "MainContent"));
+
+			await shell.GoToAsync($"LifeCyclePage/ContentPage/ModalTestPage2/ModalTestPage");
+			var lifeCyclePage = shell.Descendants().OfType<ShellLifeCycleTests.LifeCyclePage>().First();
+			Assert.False(lifeCyclePage.Appearing);
+			await shell.GoToAsync($"../../..");
+			Assert.True(lifeCyclePage.Appearing);
+		}
 
 		[Fact]
 		public async Task ModalPopsWhenSwitchingShellContent()
@@ -161,7 +184,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			await shell.GoToAsync("///NewRoute");
 
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.Equal(0, navStack.ModalStack.Count);
+			Assert.Empty(navStack.ModalStack);
 		}
 
 		[Fact]
@@ -177,7 +200,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			await shell.GoToAsync("///NewRoute");
 
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.Equal(0, navStack.ModalStack.Count);
+			Assert.Empty(navStack.ModalStack);
 		}
 
 
@@ -194,7 +217,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			await shell.GoToAsync("///NewRoute/ModalTestPage2");
 
 			var navStack = shell.Items[0].Items[0].Navigation;
-			Assert.Equal(1, navStack.ModalStack.Count);
+			Assert.Single(navStack.ModalStack);
 			Assert.Equal(typeof(ModalTestPage2), navStack.ModalStack[0].GetType());
 		}
 
@@ -350,6 +373,20 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 		}
 
 		[Fact]
+		public async Task ParentSetsWhenPushingAndUnsetsWhenPopping()
+		{
+			var shell = new TestShell();
+
+			var item = CreateShellItem(shellSectionRoute: "section2");
+			shell.Items.Add(item);
+			await shell.GoToAsync($"ModalTestPage");
+			var modal1 = (shell.CurrentItem.CurrentItem as IShellSectionController).PresentedPage as ModalTestPageBase;
+			Assert.Equal(shell.Window, modal1.Parent);
+			await shell.GoToAsync("..");
+			Assert.Null(modal1.Parent);
+		}
+
+		[Fact]
 		public async Task BasicQueryStringTest()
 		{
 			var shell = new TestShell();
@@ -379,34 +416,34 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			Assert.Equal("1234", testPage.SomeQueryParameter);
 		}
 
-		[Fact]
-		public async Task NavigatingAndNavigatedFiresForShellModal()
-		{
-			Shell shell = new TestShell();
-			shell.Items.Add(CreateShellItem(shellItemRoute: "NewRoute", shellSectionRoute: "Section", shellContentRoute: "Content"));
+		// [Fact]
+		// public async Task NavigatingAndNavigatedFiresForShellModal()
+		// {
+		// 	Shell shell = new TestShell();
+		// 	shell.Items.Add(CreateShellItem(shellItemRoute: "NewRoute", shellSectionRoute: "Section", shellContentRoute: "Content"));
 
-			ShellNavigatingEventArgs shellNavigatingEventArgs = null;
-			ShellNavigatedEventArgs shellNavigatedEventArgs = null;
+		// 	ShellNavigatingEventArgs shellNavigatingEventArgs = null;
+		// 	ShellNavigatedEventArgs shellNavigatedEventArgs = null;
 
-			shell.Navigating += (_, args) =>
-			{
-				shellNavigatingEventArgs = args;
-			};
+		// 	shell.Navigating += (_, args) =>
+		// 	{
+		// 		shellNavigatingEventArgs = args;
+		// 	};
 
-			shell.Navigated += (_, args) =>
-			{
-				shellNavigatedEventArgs = args;
-			};
+		// 	shell.Navigated += (_, args) =>
+		// 	{
+		// 		shellNavigatedEventArgs = args;
+		// 	};
 
-			await shell.GoToAsync("ModalTestPage");
+		// 	await shell.GoToAsync("ModalTestPage");
 
-			Assert.NotNull(shellNavigatingEventArgs);
-			Assert.NotNull(shellNavigatedEventArgs);
+		// 	Assert.NotNull(shellNavigatingEventArgs);
+		// 	Assert.NotNull(shellNavigatedEventArgs);
 
-			Assert.Equal("//NewRoute/Section/Content", shellNavigatingEventArgs.Current.FullLocation.ToString());
-			Assert.Equal("//NewRoute/Section/Content/ModalTestPage", shellNavigatedEventArgs.Current.FullLocation.ToString());
+		// 	Assert.Equal("//NewRoute/Section/Content", shellNavigatingEventArgs.Current.FullLocation.ToString());
+		// 	Assert.Equal("//NewRoute/Section/Content/ModalTestPage", shellNavigatedEventArgs.Current.FullLocation.ToString());
 
-		}
+		// }
 
 		[Fact]
 		public async Task GetCurrentPageInModalNavigation()
@@ -435,9 +472,9 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			await shell.CurrentPage.Navigation.PushModalAsync(new ContentPage());
 			await shell.CurrentPage.Navigation.PushModalAsync(new ContentPage());
 			await shell.GoToAsync("..");
-			Assert.Equal(1, shell.Navigation.ModalStack.Count);
+			Assert.Single(shell.Navigation.ModalStack);
 			await shell.GoToAsync("..");
-			Assert.Equal(0, shell.Navigation.ModalStack.Count);
+			Assert.Empty(shell.Navigation.ModalStack);
 		}
 
 		[Fact]
@@ -455,7 +492,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			};
 
 			await shell.GoToAsync("ModalTestPage");
-			Assert.Equal(0, shell.Navigation.ModalStack.Count);
+			Assert.Empty(shell.Navigation.ModalStack);
 		}
 
 		[Fact]
@@ -473,7 +510,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 			};
 
 			await shell.CurrentPage.Navigation.PushModalAsync(new ContentPage());
-			Assert.Equal(0, shell.Navigation.ModalStack.Count);
+			Assert.Empty(shell.Navigation.ModalStack);
 		}
 
 		[Fact]

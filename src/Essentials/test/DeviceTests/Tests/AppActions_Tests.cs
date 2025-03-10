@@ -16,7 +16,7 @@ namespace Microsoft.Maui.Essentials.DeviceTests
 
 #if __ANDROID__
 			expectSupported = OperatingSystem.IsAndroidVersionAtLeast(25);
-#elif __IOS__
+#elif __IOS__ || WINDOWS
 			expectSupported = true;
 #endif
 
@@ -37,7 +37,7 @@ namespace Microsoft.Maui.Essentials.DeviceTests
 
 			await AppActions.SetAsync(actions);
 
-			var get = await AppActions.GetAsync();
+			var get = await AppActions.GetAsync().ConfigureAwait(false);
 
 			Assert.Contains(get, a => a.Id == "TEST1");
 		}

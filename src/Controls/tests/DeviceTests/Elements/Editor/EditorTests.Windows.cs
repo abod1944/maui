@@ -7,21 +7,30 @@ namespace Microsoft.Maui.DeviceTests
 {
 	public partial class EditorTests
 	{
-		TextBox GetPlatformControl(EditorHandler handler) =>
+		static TextBox GetPlatformControl(EditorHandler handler) =>
 			handler.PlatformView;
 
-		Task<string> GetPlatformText(EditorHandler handler)
+		static Task<string> GetPlatformText(EditorHandler handler)
 		{
 			return InvokeOnMainThreadAsync(() => GetPlatformControl(handler).Text);
 		}
 
-		void SetPlatformText(EditorHandler editorHandler, string text) =>
+		Task<float> GetPlatformOpacity(EditorHandler editorHandler)
+		{
+			return InvokeOnMainThreadAsync(() =>
+			{
+				var nativeView = GetPlatformControl(editorHandler);
+				return (float)nativeView.Opacity;
+			});
+		}
+
+		static void SetPlatformText(EditorHandler editorHandler, string text) =>
 			GetPlatformControl(editorHandler).Text = text;
 
-		int GetPlatformCursorPosition(EditorHandler editorHandler) =>
+		static int GetPlatformCursorPosition(EditorHandler editorHandler) =>
 			GetPlatformControl(editorHandler).SelectionStart;
 
-		int GetPlatformSelectionLength(EditorHandler editorHandler) =>
+		static int GetPlatformSelectionLength(EditorHandler editorHandler) =>
 			GetPlatformControl(editorHandler).SelectionLength;
 	}
 }
